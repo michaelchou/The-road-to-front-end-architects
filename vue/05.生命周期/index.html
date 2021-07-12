@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车</title>
+    <style>
+      .active {
+        background-color: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 宿主文件 -->
+    <div id="app">
+      <h2 :title="title">
+        <!-- 插值文本 -->
+        {{title}}
+      </h2>
+
+      <!-- 输入绑定，事件处理 -->
+      <input v-model="course" type="text" v-on:keydown.enter="addCourse" />
+      <button @click="addCourse">新增</button>
+      <button @click="clearCourse">清空</button>
+
+      <!--条件渲染-->
+      <p v-if="courses.length === 0">没有任何课程信息</p>
+      <div v-else>
+        <!-- 列表渲染 -->
+        <div
+          v-for="item in courses"
+          :key="item"
+          :class="{active:selectedCourse === item}"
+          @click="selectedCourse=item"
+        >
+          {{ item }}
+        </div>
+      </div>
+
+      <!-- 课程总数：计算属性实现 -->
+      <!-- <p>课程总数：{{courses.length}}门</p> -->
+      <p>课程总数：{{total}}</p>
+      <!--侦听器实现-->
+      <p>课程总数2：{{totalCount}}</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!--
+      1、beforeCreated
+      2、created
+      3、beforeMounted
+      4、mounted
+      5、update
+    -->
+    <script>
+      // 模拟异步数据调用
+      function getCourses() {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(['web全栈', 'web高级']);
+          }, 2000);
+        });
+      }
+      // 创建vue实例
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            title: '我的购物车',
+            course: '',
+            courses: [],
+            selectedCourse: '',
+            totalCount: 0,
+          };
+        },
+        // 初始化（事件&生命周期）之后执行
+        beforeCreate() {
+          console.log('beforeCreate');
+        },
+        // 组件实例已创建，由于未挂载，DOM不存在
+        // 初始化（注入&校验）之后执行
+        created() {
+          console.log(this.$el, 'created');
+        },
+        // 将template编译到render函数中
+        // 将el外部的html作为template编译
+        // 模板生成之后执行
+        beforeMount() {
+          console.log('beforeMount');
+        },
+        // DOM已挂载，可操作DOM元素
+        // 创建vm.$el并用其替换‘el'之后执行mounted
+        mounted() {
+          getCourses().then((res) => {
+            this.courses = res;
+          });
+          console.log(this.$el, 'mounted');
+        },
+        beforeUpdate() {
+          console.log('beforeUpdate');
+        },
+        updated() {
+          console.log('updated');
+        },
+        methods: {
+          addCourse() {
+            this.courses.push(this.course);
+            this.course = '';
+          },
+          clearCourse() {
+            this.courses = [];
+          },
+        },
+        computed: {
+          // 计算属性具有缓存性，如果没有发生变化则页面不会重新渲染
+          total() {
+            return this.courses.length;
+          },
+        },
+        // watch: {
+        //   course(newValue, oldValue) {
+        //     this.totalCount = newValue.length;
+        //   },
+        // },
+        watch: {
+          courses: {
+            immediate: true,
+            deep: true,
+            handler(newValue, oldValue) {
+              this.totalCount = newValue.length;
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>

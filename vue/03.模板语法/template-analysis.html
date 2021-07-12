@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车</title>
+    <style>
+      .active {
+        background-color: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!--
+      1、绑定语法
+      2、列表渲染，输入绑定和事件处理
+      3、class和style绑定
+      4、条件渲染
+      5、模板和渲染函数
+    -->
+    <!-- 宿主文件 -->
+    <div id="app">
+      <h2 :title="title">
+        <!-- 插值文本 -->
+        {{title}}
+      </h2>
+
+      <!-- 输入绑定，事件处理 -->
+      <input v-model="course" type="text" v-on:keydown.enter="addCourse" />
+      <button @click="addCourse">新增</button>
+      <button @click="clearCourse">清空</button>
+
+      <!--条件渲染-->
+      <p v-if="courses.length === 0">没有任何课程信息</p>
+      <div v-else>
+        <!-- 列表渲染 -->
+        <div
+          v-for="item in courses"
+          :key="item"
+          :class="{active:selectedCourse === item}"
+          @click="selectedCourse=item"
+        >
+          {{ item }}
+        </div>
+      </div>
+    </div>
+    <script>
+      console.log('test');
+      // 创建vue实例
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            title: '我的购物车',
+            course: '',
+            courses: ['web全栈', 'web高级'],
+            selectedCourse: '',
+          };
+        },
+        methods: {
+          addCourse() {
+            this.courses.push(this.course);
+            this.course = '';
+          },
+          clearCourse() {
+            this.courses = [];
+          },
+        },
+        render() {
+          with (this) {
+            return _c(
+              'div',
+              {
+                attrs: {
+                  id: 'app',
+                },
+              },
+              [
+                _c(
+                  'h2',
+                  {
+                    attrs: {
+                      title: title,
+                    },
+                  },
+                  [_v('\n        ' + _s(title) + '\n      ')]
+                ),
+                _v(' '),
+                _c('input', {
+                  directives: [
+                    {
+                      name: 'model',
+                      rawName: 'v-model',
+                      value: course,
+                      expression: 'course',
+                    },
+                  ],
+                  attrs: {
+                    type: 'text',
+                  },
+                  domProps: {
+                    value: course,
+                  },
+                  on: {
+                    keydown: function ($event) {
+                      if (
+                        !$event.type.indexOf('key') &&
+                        _k($event.keyCode, 'enter', 13, $event.key, 'Enter')
+                      )
+                        return null;
+                      return addCourse.apply(null, arguments);
+                    },
+                    input: function ($event) {
+                      if ($event.target.composing) return;
+                      course = $event.target.value;
+                    },
+                  },
+                }),
+                _v(' '),
+                _c(
+                  'button',
+                  {
+                    on: {
+                      click: addCourse,
+                    },
+                  },
+                  [_v('新增')]
+                ),
+                _v(' '),
+                _c(
+                  'button',
+                  {
+                    on: {
+                      click: clearCourse,
+                    },
+                  },
+                  [_v('清空')]
+                ),
+                _v(' '),
+                courses.length === 0
+                  ? _c('p', [_v('没有任何课程信息')])
+                  : _c(
+                      'div',
+                      _l(courses, function (item) {
+                        return _c(
+                          'div',
+                          {
+                            key: item,
+                            class: {
+                              active: selectedCourse === item,
+                            },
+                            on: {
+                              click: function ($event) {
+                                selectedCourse = item;
+                              },
+                            },
+                          },
+                          [_v('\n          ' + _s(item) + '\n        ')]
+                        );
+                      }),
+                      0
+                    ),
+              ]
+            );
+          }
+        },
+      });
+      console.log(app.$options.render);
+    </script>
+  </body>
+</html>

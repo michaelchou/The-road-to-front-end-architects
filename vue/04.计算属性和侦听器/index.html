@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车</title>
+    <style>
+      .active {
+        background-color: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!--
+      1、绑定语法
+      2、列表渲染，输入绑定和事件处理
+      3、class和style绑定
+      4、条件渲染
+      5、模板和渲染函数
+    -->
+    <!-- 宿主文件 -->
+    <div id="app">
+      <h2 :title="title">
+        <!-- 插值文本 -->
+        {{title}}
+      </h2>
+
+      <!-- 输入绑定，事件处理 -->
+      <input v-model="course" type="text" v-on:keydown.enter="addCourse" />
+      <button @click="addCourse">新增</button>
+      <button @click="clearCourse">清空</button>
+
+      <!--条件渲染-->
+      <p v-if="courses.length === 0">没有任何课程信息</p>
+      <div v-else>
+        <!-- 列表渲染 -->
+        <div
+          v-for="item in courses"
+          :key="item"
+          :class="{active:selectedCourse === item}"
+          @click="selectedCourse=item"
+        >
+          {{ item }}
+        </div>
+      </div>
+
+      <!-- 课程总数：计算属性实现 -->
+      <!-- <p>课程总数：{{courses.length}}门</p> -->
+      <p>课程总数：{{total}}</p>
+      <!--侦听器实现-->
+      <p>课程总数2：{{totalCount}}</p>
+    </div>
+    <script>
+      console.log('test');
+      // 创建vue实例
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            title: '我的购物车',
+            course: '',
+            courses: ['web全栈', 'web高级'],
+            selectedCourse: '',
+            totalCount: 0,
+          };
+        },
+        methods: {
+          addCourse() {
+            this.courses.push(this.course);
+            this.course = '';
+          },
+          clearCourse() {
+            this.courses = [];
+          },
+        },
+        computed: {
+          // 计算属性具有缓存性，如果没有发生变化则页面不会重新渲染
+          total() {
+            return this.courses.length;
+          },
+        },
+        // watch: {
+        //   course(newValue, oldValue) {
+        //     this.totalCount = newValue.length;
+        //   },
+        // },
+        watch: {
+          courses: {
+            immediate: true,
+            deep: true,
+            handler(newValue, oldValue) {
+              this.totalCount = newValue.length;
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
