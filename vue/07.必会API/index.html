@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车</title>
+    <style>
+      .active {
+        background-color: #ddd;
+      }
+      .message-box {
+        padding: 10px 20px;
+        background: #4fc08d;
+        border: 1px solid #42b983;
+      }
+      .success {
+        background: #4fc08d;
+        border: 1px solid #42b983;
+      }
+      .warning {
+        background: #f66;
+        border: 1px solid #42b983;
+      }
+      .message-box-close {
+        float: right;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 宿主文件 -->
+    <div id="app">
+      <!-- 弹窗组件 -->
+      <message :show.sync="show" class="success">
+        <!-- 具名插槽 -->
+        <template v-slot:title> <strong>恭喜</strong>> </template>
+        <!-- 默认插槽 -->
+        <template v-slot:default>新增课程成功</template>
+      </message>
+
+      <message :show.sync="showWarn" class="warning">
+        <!-- 具名插槽 -->
+        <template v-slot:title> <strong>警告</strong>> </template>
+        <!-- 默认插槽 -->
+        <template v-slot:default>请输入课程名称</template>
+      </message>
+
+      <h2 :title="title">
+        <!-- 插值文本 -->
+        {{title}}
+      </h2>
+
+      <!-- 新增课程-->
+      <!-- 让course双向绑定 -->
+      <course-add v-model="course" @add-course="onAddCourse"></course-add>
+
+      <!-- 批量更新价格 -->
+      <p>
+        <input type="text" v-model.number="price" />
+        <button @click="batchUpdate">批量更新价格</button>
+      </p>
+
+      <!--列表组件-->
+      <course-list :courses="courses"></course-list>
+
+      <!-- 课程总数：计算属性实现 -->
+      <!-- <p>课程总数：{{courses.length}}门</p> -->
+      <p>课程总数：{{total}}</p>
+      <!--侦听器实现-->
+      <p>课程总数2：{{totalCount}}</p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!-- <script src="course-list.js"></script>
+    <script src="course-add.js"></script>
+    <script src="course-message.js"></script> -->
+    <script>
+      // 事件总线
+      Vue.prototype.$bus = new Vue();
+
+      // 双向绑定实例实现
+      Vue.component('course-add', {
+        props: ['value'],
+        template: `
+            <div>
+                <input v-model="value" @input="onInput" type="text" v-on:keydown.enter="addCourse" ref="inputCourse" />
+                <button @click="addCourse">新增</button>
+                <button @click="clearCourse">清空</button>
+                <button @click="closeAllMessage">关闭弹窗</button>
+            </div>
+        `,
+        methods: {
+          addCourse() {
+            this.$emit('add-course');
+          },
+          onInput(e) {
+            this.$emit('input', e.target.value);
+          },
+          clearCourse() {
+            this.course = '';
+          },
+          closeAllMessage() {
+            this.$bus.$emit('message-close');
+          },
+        },
+        mounted() {
+          this.$refs.inputCourse.focus();
+        },
+      });
+
+      // 课程列表组件
+      Vue.component('course-list', {
+        data() {
+          return {
+            selectedCourse: '',
+          };
+        },
+        props: {
+          courses: {
+            type: Array,
+            default: [],
+          },
+        },
+        template: `
+          <div>
+              <p v-if="courses.length === 0">没有任何课程信息</p>
+              <div v-else>
+                  <!-- 列表渲染 -->
+                  <div
+                  ref="coursesList"
+                  v-for="item in courses"
+                  :key="item.name"
+                  :class="{active:selectedCourse === item.name}"
+                  @click="selectedCourse=item.name"
+                  >
+                  {{ item.name }} - ￥{{ item.price }} 
+                  </div>
+              </div>
+          </div>
+          `,
+        mounted() {
+          console.log(this.$refs.coursesList, 'mounted');
+        },
+        updated() {
+          console.log(this.$refs.coursesList, 'updated');
+        },
+      });
+
+      // 通过弹窗组件实现slot插槽
+      Vue.component('message', {
+        props: {
+          show: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        template: `
+            <div class="message-box" v-if="show">
+                <!-- 具名插槽 -->
+                <slot name="title"></slot>
+                <!-- 通过slot插槽获取传入的内容 -->
+                <slot></slot>
+                <span class="message-box-close" @click="$emit('update:show', false)">X</span>
+            </div>
+        `,
+        mounted() {
+          this.$bus.$on('message-close', () => {
+            this.$emit('update:show', false);
+          });
+        },
+      });
+
+      // 模拟异步数据调用
+      function getCourses() {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve([{ name: 'web全栈' }, { name: 'web高级' }]);
+          }, 2000);
+        });
+      }
+      // 创建vue实例
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            title: '我的购物车',
+            course: '',
+            courses: [],
+            totalCount: 0,
+            show: false,
+            showWarn: false,
+            price: 0,
+          };
+        },
+
+        mounted() {
+          getCourses().then((res) => {
+            this.courses = res;
+            // 批量更新价格
+            this.batchUpdate();
+          });
+        },
+        methods: {
+          onAddCourse() {
+            if (this.course) {
+              this.courses.push(this.course);
+              this.course = '';
+              // 显示提示信息
+              this.show = true;
+            } else {
+              this.showWarn = true;
+            }
+          },
+          batchUpdate() {
+            this.courses.forEach((value) => {
+              //   value.price = this.price;
+              //   Vue.set(value, 'price', this.price);
+              this.$set(value, 'price', this.price);
+            });
+          },
+        },
+        computed: {
+          // 计算属性具有缓存性，如果没有发生变化则页面不会重新渲染
+          total() {
+            return this.courses.length;
+          },
+        },
+        // watch: {
+        //   course(newValue, oldValue) {
+        //     this.totalCount = newValue.length;
+        //   },
+        // },
+        watch: {
+          courses: {
+            immediate: true,
+            deep: true,
+            handler(newValue, oldValue) {
+              this.totalCount = newValue.length;
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车</title>
+    <style>
+      .active {
+        background-color: #ddd;
+      }
+      .message-box {
+        padding: 10px 20px;
+        background: #4fc08d;
+        border: 1px solid #42b983;
+      }
+      .message-box-close {
+        float: right;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 宿主文件 -->
+    <div id="app">
+      <!-- 弹窗组件 -->
+      <message :show.sync="show">
+        <!-- 具名插槽 -->
+        <template v-slot:title> <strong>恭喜</strong>> </template>
+        <!-- 默认插槽 -->
+        <template v-slot:default>新增课程成功</template>
+      </message>
+
+      <h2 :title="title">
+        <!-- 插值文本 -->
+        {{title}}
+      </h2>
+
+      <!-- 新增课程-->
+      <!-- 让course双向绑定 -->
+      <course-add v-model="course" @add-course="onAddCourse"></course-add>
+
+      <!--列表组件-->
+      <course-list :courses="courses"></course-list>
+
+      <!-- 课程总数：计算属性实现 -->
+      <!-- <p>课程总数：{{courses.length}}门</p> -->
+      <p>课程总数：{{total}}</p>
+      <!--侦听器实现-->
+      <p>课程总数2：{{totalCount}}</p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!-- <script src="course-list.js"></script>
+    <script src="course-add.js"></script>
+    <script src="course-message.js"></script> -->
+    <script>
+      // 双向绑定实例实现
+      Vue.component('course-add', {
+        props: ['value'],
+        template: `
+        <div>
+            <input v-model="value" @input="onInput" type="text" v-on:keydown.enter="addCourse" />
+            <button @click="addCourse">新增</button>
+            <button @click="clearCourse">清空</button>
+        </div>
+    `,
+        methods: {
+          addCourse() {
+            this.$emit('add-course');
+          },
+          onInput(e) {
+            this.$emit('input', e.target.value);
+          },
+          clearCourse() {
+            this.course = '';
+          },
+        },
+      });
+
+      // 课程列表组件
+      Vue.component('course-list', {
+        data() {
+          return {
+            selectedCourse: '',
+          };
+        },
+        props: {
+          courses: {
+            type: Array,
+            default: [],
+          },
+        },
+        template: `
+        <div>
+            <p v-if="courses.length === 0">没有任何课程信息</p>
+            <div v-else>
+                <!-- 列表渲染 -->
+                <div
+                v-for="item in courses"
+                :key="item"
+                :class="{active:selectedCourse === item}"
+                @click="selectedCourse=item"
+                >
+                {{ item }}
+                </div>
+            </div>
+         </div>
+        `,
+      });
+
+      // 通过弹窗组件实现slot插槽
+      Vue.component('message', {
+        props: {
+          show: {
+            type: Boolean,
+            default: false,
+          },
+        },
+        template: `
+        <div class="message-box" v-if="show">
+            <!-- 具名插槽 -->
+            <slot name="title"></slot>
+            <!-- 通过slot插槽获取传入的内容 -->
+            <slot></slot>
+            <span class="message-box-close" @click="$emit('update:show', false)">X</span>
+        </div>
+    `,
+      });
+
+      // 模拟异步数据调用
+      function getCourses() {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(['web全栈', 'web高级']);
+          }, 2000);
+        });
+      }
+      // 创建vue实例
+      const app = new Vue({
+        el: '#app',
+        data() {
+          return {
+            title: '我的购物车',
+            course: '',
+            courses: [],
+            totalCount: 0,
+            show: false,
+          };
+        },
+
+        mounted() {
+          getCourses().then((res) => {
+            this.courses = res;
+          });
+          console.log(this.$el, 'mounted');
+        },
+        methods: {
+          onAddCourse() {
+            this.courses.push(this.course);
+            this.course = '';
+            // 显示提示信息
+            this.show = true;
+          },
+        },
+        computed: {
+          // 计算属性具有缓存性，如果没有发生变化则页面不会重新渲染
+          total() {
+            return this.courses.length;
+          },
+        },
+        // watch: {
+        //   course(newValue, oldValue) {
+        //     this.totalCount = newValue.length;
+        //   },
+        // },
+        watch: {
+          courses: {
+            immediate: true,
+            deep: true,
+            handler(newValue, oldValue) {
+              this.totalCount = newValue.length;
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
